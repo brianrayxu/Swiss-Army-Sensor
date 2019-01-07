@@ -1,0 +1,134 @@
+
+
+<!-- client side -->
+
+<!doctype html>
+<html>
+
+<!-- HTML HEAD -->
+<head>
+	<title>Line Chart</title>
+	<!-- Source for Canvas JS - points to the web - needs internet -->
+	<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+	<!-- Source for Socket.io - this one is local -->
+	<script src="/socket.io/socket.io.js"></script>
+
+	<style>
+  	canvas{
+  		-moz-user-select: none;
+  		-webkit-user-select: none;
+  		-ms-user-select: none;
+  	}
+	</style>
+</head>
+
+<body>
+	<!-- HTML layout -->
+  
+	<div id="message_disp"></div>
+	<div id="chartContainer" style="height: 500px; width: 90%;"></div>
+
+	<!-- Script to handle charting -->
+	<script>
+
+		var lidar = [];
+		var ir = [];
+		var ultrasonic = [];
+		var chart = new CanvasJS.Chart("chartContainer", {
+			exportEnabled: true,
+			title :{
+				text: "Distance Over Time"
+			},
+			axisY: {
+				title: "Distance (m)",
+				includeZero: false
+			},
+			axisX: {
+				title: "Time (seconds)"
+			},
+			data: [{
+				type: "line",
+				markerSize: 0,
+				showInLegend: true,
+				name: "lidar",
+				dataPoints: lidar
+			},
+			{
+				type: "line",
+				markerSize: 0,
+				showInLegend: true,
+				name: "ultrasonic",
+				dataPoints: ultrasonic
+			},
+			{
+				type: "line",
+				markerSize: 0,
+				showInLegend: true,
+				name: "ir",
+				dataPoints: ir
+
+			}]
+		});
+		// number of dataPoints visible at any point
+		var dataLength = 50;
+	</script>
+
+	<!-- Script to handle socket and also to update chart datapoints -->
+	<script>
+		var index = 0;
+		var index1 = 0;
+		var index2 = 0;
+		var msg2 = 0;
+		var count = 0;
+		var socket = io();
+		socket.on('message', function(msg){
+			console.log(msg);
+			document.getElementById("message_disp").innerHTML = msg;
+			// Update data array
+			if(count == 0){
+				lidar.push({
+					x: index,
+					y: msg
+				});
+				
+				count =1;
+				if (lidar.length > dataLength) {
+					lidar.shift();
+				}
+				
+			}
+			else if(count == 1){
+				ultrasonic.push({
+				x: index,
+				y: msg
+				});
+				
+				count = 2;
+
+				if (ultrasonic.length > dataLength) {
+					ultrasonic.shift();
+				}
+				
+				
+			}
+			else if(count == 2){
+				ir.push({
+					x: index,
+					y: msg 
+				});
+				
+				if (ir.length > dataLength) {
+					ir.shift();
+				}
+				chart.render();
+				count = 0;
+				index++;
+			}
+			
+			
+		});
+	</script>
+
+</body>
+
+</html>
